@@ -61,7 +61,7 @@
   #board{display:grid;grid-template-columns:repeat(9,1fr);width:100%;height:100%}
   .cell{
     display:flex;align-items:center;justify-content:center;
-    background:var(--paper);color:var(--entry);font-size:1.15rem;font-weight:500;
+    background:var(--paper);color:var(--entry);font-size:clamp(17px,5vw,22px);font-weight:500;
     border-right:.5px solid var(--given);border-bottom:.5px solid var(--given);
     font-variant-numeric:tabular-nums;transition:background 260ms ease;
     padding:0;line-height:1;
@@ -79,7 +79,7 @@
   .cell.done.samev{background:var(--doneSame)}
   .cell.sel{background:var(--sel)}
   .notes{display:grid;grid-template-columns:repeat(3,1fr);width:100%;height:100%;
-    font-size:8px;color:#6C7385;font-weight:400}
+    font-size:clamp(10px,3.1vw,13px);color:#4E5668;font-weight:500;line-height:1}
   .notes span{display:flex;align-items:center;justify-content:center}
 
   .overlay{
