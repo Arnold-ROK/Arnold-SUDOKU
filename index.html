@@ -19,7 +19,7 @@
     --entry:#1F5FA8; --bad:#B23B2E; --hint:#7B57A8; --done:#BEDCB4;
     --doneSame:#A9CF9D; --amber:#E8A93A; --dim:#8FA0C2;
     --serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
-    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Apple SD Gothic Neo','Malgun Gothic','Hiragino Sans','Yu Gothic','PingFang SC','Microsoft YaHei','Noto Sans CJK KR',sans-serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;padding:0;background:var(--ink);min-height:100%}
@@ -30,6 +30,16 @@
     -webkit-user-select:none; user-select:none;
   }
   #app{width:100%;max-width:430px}
+  .topBar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+  .langWrap{position:relative;display:flex;align-items:center;min-width:0;
+    border:1px solid var(--line);border-radius:4px;color:var(--dim)}
+  .langWrap .globe{position:absolute;left:9px;font-size:13px;pointer-events:none}
+  .langWrap .caret{position:absolute;right:9px;font-size:9px;pointer-events:none}
+  #langSel{appearance:none;-webkit-appearance:none;background:transparent;border:none;color:var(--paper);
+    font-family:var(--sans);font-size:12.5px;padding:8px 24px 8px 29px;min-height:34px;cursor:pointer;border-radius:4px}
+  #langSel option{color:#1A2438;background:#fff}
+  #helpBtn{padding:8px 12px;min-height:34px;border-radius:4px;background:transparent;
+    border:1px solid var(--line);color:var(--paper);font-size:12.5px;white-space:nowrap}
   h1{
     font-family:var(--serif); font-size:28px; letter-spacing:.16em;
     font-weight:400; margin:0; text-align:center; color:var(--paper);
@@ -104,9 +114,12 @@
 
   #tools{display:flex;gap:8px;margin-top:8px}
   #tools button{
-    flex:1;padding:11px 0;border-radius:4px;background:transparent;
-    border:1px solid var(--line);color:var(--dim);font-size:12.5px;
+    flex:1 1 0;min-width:0;padding:8px 2px;border-radius:4px;background:transparent;
+    border:1px solid var(--line);color:var(--dim);font-size:12px;line-height:1.25;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   }
+  #tools .ic{font-size:15px;line-height:1}
+  #tools .tx{overflow-wrap:anywhere}
   #tools button.on{background:var(--amber);border-color:var(--amber);color:var(--given);font-weight:600}
 
   .statusRow{display:flex;align-items:center;gap:8px;margin-top:8px}
@@ -125,11 +138,41 @@
   .recCols span:not(:first-child),.recRow span:not(:first-child){text-align:right}
   .recRow.cur span:first-child{color:var(--amber)}
   #reset{margin-top:16px;width:100%;padding:9px 0;border-radius:4px;background:transparent;
-    border:1px solid var(--panel);color:var(--line);font-size:11.5px}
+    border:1px solid var(--panel);color:var(--dim);font-size:11.5px}
+
+  #fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:15}
+
+  body.noscroll{overflow:hidden}
+  #helpModal{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+    padding:max(14px,env(safe-area-inset-top)) 12px max(14px,env(safe-area-inset-bottom));
+    background:rgba(7,13,27,.72)}
+  #helpPanel{width:100%;max-width:430px;max-height:100%;display:flex;flex-direction:column;
+    background:var(--ink);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .helpHead{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:12px 16px;border-bottom:1px solid var(--line)}
+  #helpTitle{margin:0;font-family:var(--sans);font-size:15px;font-weight:600;letter-spacing:0;color:var(--paper)}
+  #helpClose{padding:7px 12px;min-height:32px;border:none;border-radius:4px;background:var(--amber);
+    color:var(--given);font-size:12.5px;font-weight:600;white-space:nowrap}
+  #helpBody{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+    padding:2px 16px 18px;font-size:13.5px;line-height:1.6;color:var(--paper);
+    -webkit-user-select:text;user-select:text}
+  #helpBody h3{margin:18px 0 6px;font-size:12.5px;font-weight:600;letter-spacing:.03em;color:var(--amber)}
+  #helpBody p{margin:0 0 8px}
+  #helpBody dl{margin:0}
+  #helpBody dt{margin-top:9px;font-weight:600}
+  #helpBody dd{margin:1px 0 0;color:#C9D2E4}
 </style>
 </head>
 <body>
 <div id="app">
+  <div class="topBar">
+    <label class="langWrap">
+      <span class="globe" aria-hidden="true">🌐</span>
+      <select id="langSel"></select>
+      <span class="caret" aria-hidden="true">▼</span>
+    </label>
+    <button id="helpBtn" type="button"></button>
+  </div>
   <h1>RYK SUDOKU</h1>
   <div class="rule">
     <i></i><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i>
@@ -138,54 +181,468 @@
   <div class="row" id="diffs"></div>
 
   <div class="bar">
-    <span class="lbl" id="diffLabel">쉬움</span>
+    <span class="lbl" id="diffLabel"></span>
     <span id="clock">00:00</span>
-    <button id="pause">멈춤</button>
+    <button id="pause"></button>
   </div>
 
   <div id="boardWrap">
     <div id="board"></div>
     <div class="overlay hidden" id="pauseCover">
-      <span style="font-size:15px">시간이 멈췄습니다</span>
-      <button class="cta" id="resume">이어서 풀기</button>
+      <span style="font-size:15px" id="pausedText"></span>
+      <button class="cta" id="resume"></button>
     </div>
     <div class="overlay hidden" id="winCover">
-      <span id="winNote">완성</span>
+      <span id="winNote"></span>
       <span id="winTime">00:00</span>
-      <button class="cta" id="again">한 판 더</button>
+      <button class="cta" id="again"></button>
     </div>
-    <div class="overlay hidden" id="loadCover">퍼즐 만드는 중</div>
+    <div class="overlay hidden" id="loadCover"></div>
   </div>
 
   <div id="pad"></div>
 
   <div id="tools">
-    <button id="noteBtn">✎ 메모</button>
-    <button id="hintBtn">💡 힌트</button>
-    <button id="undoBtn">↺ 되돌리기</button>
-    <button id="eraseBtn">⌫ 지우기</button>
+    <button id="noteBtn"><span class="ic" aria-hidden="true">✎</span><span class="tx"></span></button>
+    <button id="hintBtn"><span class="ic" aria-hidden="true">💡</span><span class="tx"></span></button>
+    <button id="undoBtn"><span class="ic" aria-hidden="true">↺</span><span class="tx"></span></button>
+    <button id="eraseBtn"><span class="ic" aria-hidden="true">⌫</span><span class="tx"></span></button>
   </div>
 
   <div class="statusRow">
     <span id="status"></span>
-    <button id="newGame">새 퍼즐</button>
+    <button id="newGame"></button>
   </div>
 
   <div id="records">
-    <div class="recHead"><span>기록</span><span>총 <b id="totalSolved">0</b>판</span></div>
-    <div class="recCols"><span>난이도</span><span>푼 횟수</span><span>최단</span><span>최장</span></div>
+    <div class="recHead"><span id="recTitle"></span><span id="recTotal"></span></div>
+    <div class="recCols"><span id="colDiff"></span><span id="colSolved"></span><span id="colBest"></span><span id="colWorst"></span></div>
     <div id="recRows"></div>
-    <button id="reset">기록 전체 지우기</button>
+    <button id="reset"></button>
+  </div>
+</div>
+
+<canvas id="fx" class="hidden" aria-hidden="true"></canvas>
+
+<div id="helpModal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div id="helpPanel">
+    <div class="helpHead">
+      <h2 id="helpTitle"></h2>
+      <button id="helpClose" type="button"></button>
+    </div>
+    <div id="helpBody"></div>
   </div>
 </div>
 
 <script>
+/* ---------------- languages ---------------- */
+const LANGS = [
+  {code:'ko', html:'ko',      name:'한국어'},
+  {code:'en', html:'en',      name:'English'},
+  {code:'ja', html:'ja',      name:'日本語'},
+  {code:'zh', html:'zh-Hans', name:'简体中文'},
+  {code:'es', html:'es',      name:'Español'},
+  {code:'fr', html:'fr',      name:'Français'},
+  {code:'de', html:'de',      name:'Deutsch'},
+];
+const I18N = {
+  ko:{
+    easy:'쉬움', medium:'보통', hard:'어려움', expert:'전문가',
+    pause:'멈춤', resumeShort:'계속하기', paused:'시간이 멈췄습니다', resumeLong:'이어서 풀기',
+    win:'완성', winBest:'새 최단 기록', winHint:'힌트 {n}회 사용 — 시간 기록 제외', again:'한 판 더',
+    loading:'퍼즐 만드는 중',
+    note:'메모', hintBtn:'힌트', undo:'되돌리기', erase:'지우기',
+    noteMode:'메모 모드 — 숫자를 누르면 작게 적힙니다',
+    pickCell:'빈칸을 먼저 선택하세요', givenCell:'처음부터 주어진 칸입니다', hintSeen:'이미 힌트를 본 칸입니다',
+    hasNumber:'숫자가 있는 칸입니다 — 지우고 눌러주세요', hintValue:'힌트: {n}',
+    newPuzzle:'새 퍼즐',
+    records:'기록', total:'총 {n}판', colDiff:'난이도', colSolved:'푼 횟수', colBest:'최단', colWorst:'최장',
+    reset:'기록 전체 지우기', resetConfirm:'저장된 기록을 모두 지울까요? 되돌릴 수 없습니다.',
+    help:'사용 설명', close:'닫기', language:'언어',
+    helpDoc:[
+      {h:'게임 소개', p:'RYK SUDOKU는 난이도 선택, 시간 기록, 메모와 힌트를 갖춘 스도쿠입니다. 답이 하나뿐인 퍼즐만 출제하며, 한 번 열어 두면 인터넷 없이도 즐길 수 있습니다.'},
+      {h:'규칙', p:'가로줄, 세로줄, 3×3 박스마다 1부터 9까지의 숫자가 한 번씩만 들어가도록 빈칸을 모두 채우세요. 퍼즐을 완성하면 축하 폭죽이 터집니다.'},
+      {h:'조작법', items:[
+        ['난이도 · 새 퍼즐','누르면 새 퍼즐이 바로 시작됩니다. 풀던 판은 이어지지 않습니다.'],
+        ['숫자 입력','칸을 고르고 아래 숫자를 누릅니다. 규칙에 어긋나는 숫자는 빨간색으로 표시됩니다.'],
+        ['멈춤','시간이 멈추고 판이 가려집니다. 다른 앱으로 넘어가면 자동으로 멈추고, 사용 설명을 보는 동안에도 시간은 흐르지 않습니다.'],
+        ['✎ 메모','켜고 숫자를 누르면 칸 안에 작은 후보 숫자로 적힙니다. 같은 숫자를 다시 누르면 지워집니다.'],
+        ['💡 힌트','빈칸을 고른 뒤 누르면 정답이 보라색으로 채워지고 잠깁니다.'],
+        ['↺ 되돌리기 · ⌫ 지우기','직전 입력을 취소하거나 선택한 칸을 비웁니다.'],
+        ['녹색 표시','가로줄, 세로줄, 박스가 1~9로 정확히 채워지면 그 칸들이 녹색으로 바뀝니다.'],
+        ['PC 단축키','숫자키 1~9 입력, Backspace 지우기, 방향키 이동, H 힌트, N 메모.'],
+      ]},
+      {h:'기록과 저장', items:[
+        ['기록','난이도별 푼 횟수와 최단·최장 시간을 보여 줍니다. 힌트를 쓴 판은 푼 횟수에만 더해집니다.'],
+        ['이어 풀기','앱을 닫아도 풀던 판과 시간이 저장되어, 다시 열면 이어서 풀 수 있습니다.'],
+        ['저장 위치','기록은 사용 중인 기기에만 저장되며 다른 기기로 옮겨지지 않습니다.'],
+        ['기록이 사라지는 경우','앱 삭제, 사이트 데이터 삭제, 시크릿 모드 사용 시 사라집니다. 아이폰에서는 수 주 이상 열지 않으면 데이터가 정리될 수 있습니다.'],
+        ['언어','화면 위 메뉴에서 언제든 바꿀 수 있으며, 풀던 판과 기록은 그대로 유지됩니다.'],
+      ]},
+      {h:'설치 방법', p:'설치하지 않고 브라우저에서 그대로 즐겨도 됩니다.', items:[
+        ['아이폰 · 아이패드','Safari로 게임 주소를 열고, 공유 버튼 → 홈 화면에 추가 → 추가를 누릅니다.'],
+        ['안드로이드','Chrome으로 게임 주소를 열고, ⋮ 메뉴 → 앱 설치(또는 홈 화면에 추가) → 설치를 누릅니다.'],
+        ['PC','Chrome이나 Edge로 게임 주소를 열고, 주소창 오른쪽의 설치 아이콘 → 설치를 누릅니다.'],
+      ]},
+    ],
+  },
+  en:{
+    easy:'Easy', medium:'Medium', hard:'Hard', expert:'Expert',
+    pause:'Pause', resumeShort:'Resume', paused:'Time is paused', resumeLong:'Keep solving',
+    win:'Solved', winBest:'New fastest time', winHint:'{n} hint(s) used — time not recorded', again:'Play again',
+    loading:'Creating puzzle',
+    note:'Notes', hintBtn:'Hint', undo:'Undo', erase:'Erase',
+    noteMode:'Notes mode — numbers are written small',
+    pickCell:'Select an empty cell first', givenCell:'This cell was given at the start', hintSeen:'Hint already used on this cell',
+    hasNumber:'This cell has a number — erase it first', hintValue:'Hint: {n}',
+    newPuzzle:'New puzzle',
+    records:'Records', total:'Total {n}', colDiff:'Level', colSolved:'Solved', colBest:'Fastest', colWorst:'Slowest',
+    reset:'Clear all records', resetConfirm:'Clear all saved records? This cannot be undone.',
+    help:'How to play', close:'Close', language:'Language',
+    helpDoc:[
+      {h:'About the game', p:'RYK SUDOKU is a Sudoku game with difficulty levels, time records, notes and hints. Every puzzle has exactly one solution, and once opened, the game also works without an internet connection.'},
+      {h:'Rules', p:'Fill every empty cell so that each row, column and 3×3 box contains the numbers 1 to 9 exactly once. Complete the puzzle and fireworks will celebrate your win.'},
+      {h:'Controls', items:[
+        ['Level · New puzzle','Starts a new puzzle right away. The puzzle in progress is not kept.'],
+        ['Entering numbers','Select a cell, then tap a number below. Numbers that break the rules turn red.'],
+        ['Pause','Stops the clock and hides the board. The game also pauses when you switch to another app, and the clock stops while you read these instructions.'],
+        ['✎ Notes','Turn on, then tap numbers to write small candidates in a cell. Tap the same number again to remove it.'],
+        ['💡 Hint','Select an empty cell and tap to fill in the correct number in purple. The cell is then locked.'],
+        ['↺ Undo · ⌫ Erase','Cancels your last entry, or clears the selected cell.'],
+        ['Green cells','When a row, column or box is correctly filled with 1 to 9, its cells turn green.'],
+        ['Keyboard shortcuts','1–9 to enter, Backspace to erase, arrow keys to move, H for hint, N for notes.'],
+      ]},
+      {h:'Records and saving', items:[
+        ['Records','Shows the number of puzzles solved and the fastest and slowest times for each level. Puzzles solved with hints count only toward the number solved.'],
+        ['Continuing','Your puzzle and time are saved when you close the app, so you can pick up where you left off.'],
+        ['Where it is saved','Records stay on the device you are using and do not transfer to other devices.'],
+        ['When records are lost','Deleting the app, clearing site data or using private browsing removes them. On iPhone, data may be cleared if the app is not opened for several weeks.'],
+        ['Language','Change it at any time from the menu at the top. Your puzzle and records are kept.'],
+      ]},
+      {h:'How to install', p:'You can also simply play in your browser without installing.', items:[
+        ['iPhone · iPad','Open the game address in Safari, then tap Share → Add to Home Screen → Add.'],
+        ['Android','Open the game address in Chrome, then tap the ⋮ menu → Install app (or Add to Home screen) → Install.'],
+        ['PC','Open the game address in Chrome or Edge, then click the install icon at the right of the address bar → Install.'],
+      ]},
+    ],
+  },
+  ja:{
+    easy:'かんたん', medium:'ふつう', hard:'むずかしい', expert:'上級',
+    pause:'一時停止', resumeShort:'再開', paused:'時間を止めています', resumeLong:'続きを解く',
+    win:'完成', winBest:'最短記録を更新', winHint:'ヒント{n}回使用 — タイムは記録されません', again:'もう一度',
+    loading:'パズルを作成中',
+    note:'メモ', hintBtn:'ヒント', undo:'元に戻す', erase:'消す',
+    noteMode:'メモモード — 数字が小さく書き込まれます',
+    pickCell:'先に空いているマスを選んでください', givenCell:'最初から入っているマスです', hintSeen:'このマスはヒント使用済みです',
+    hasNumber:'数字が入っています — 消してから押してください', hintValue:'ヒント: {n}',
+    newPuzzle:'新しいパズル',
+    records:'記録', total:'合計 {n} 回', colDiff:'難易度', colSolved:'完成回数', colBest:'最短', colWorst:'最長',
+    reset:'記録をすべて消す', resetConfirm:'保存された記録をすべて消しますか？元に戻せません。',
+    help:'使い方', close:'閉じる', language:'言語',
+    helpDoc:[
+      {h:'ゲームの紹介', p:'RYK SUDOKUは、難易度選択、タイム記録、メモ、ヒントを備えた数独です。答えが一つだけのパズルを出題し、一度開いておけばインターネットなしでも遊べます。'},
+      {h:'ルール', p:'縦の列、横の行、3×3のブロックのそれぞれに1から9の数字が一度ずつ入るように、空いているマスをすべて埋めてください。パズルを完成させるとお祝いの花火が上がります。'},
+      {h:'操作方法', items:[
+        ['難易度 · 新しいパズル','押すとすぐに新しいパズルが始まります。解いている途中のパズルは引き継がれません。'],
+        ['数字の入力','マスを選び、下の数字を押します。ルールに合わない数字は赤く表示されます。'],
+        ['一時停止','時間が止まり、盤面が隠れます。他のアプリに切り替えると自動で止まり、使い方を読んでいる間も時間は進みません。'],
+        ['✎ メモ','オンにして数字を押すと、マスに候補の数字が小さく書き込まれます。同じ数字をもう一度押すと消えます。'],
+        ['💡 ヒント','空いているマスを選んで押すと、正解が紫色で入り、そのマスは固定されます。'],
+        ['↺ 元に戻す · ⌫ 消す','直前の入力を取り消す、または選んだマスを空にします。'],
+        ['緑色の表示','行、列、ブロックが1〜9で正しく埋まると、そのマスが緑色になります。'],
+        ['キーボード操作','1〜9で入力、Backspaceで消去、矢印キーで移動、Hでヒント、Nでメモ。'],
+      ]},
+      {h:'記録と保存', items:[
+        ['記録','難易度ごとの完成回数と最短・最長タイムを表示します。ヒントを使ったパズルは完成回数にのみ加算されます。'],
+        ['続きから','アプリを閉じても解いているパズルと時間が保存され、次に開くと続きから解けます。'],
+        ['保存場所','記録は使用中の端末にのみ保存され、他の端末には移りません。'],
+        ['記録が消える場合','アプリの削除、サイトデータの消去、プライベートブラウズの使用で消えます。iPhoneでは数週間以上開かないとデータが整理されることがあります。'],
+        ['言語','画面上部のメニューからいつでも変更できます。解いているパズルと記録はそのまま残ります。'],
+      ]},
+      {h:'インストール方法', p:'インストールせずにブラウザでそのまま遊ぶこともできます。', items:[
+        ['iPhone · iPad','Safariでゲームのアドレスを開き、共有ボタン → ホーム画面に追加 → 追加 を押します。'],
+        ['Android','Chromeでゲームのアドレスを開き、⋮メニュー → アプリをインストール（またはホーム画面に追加）→ インストール を押します。'],
+        ['PC','ChromeまたはEdgeでゲームのアドレスを開き、アドレスバー右側のインストールアイコン → インストール を押します。'],
+      ]},
+    ],
+  },
+  zh:{
+    easy:'简单', medium:'中等', hard:'困难', expert:'专家',
+    pause:'暂停', resumeShort:'继续', paused:'时间已暂停', resumeLong:'继续解题',
+    win:'完成', winBest:'新的最快纪录', winHint:'使用了 {n} 次提示 — 不记录时间', again:'再来一局',
+    loading:'正在生成谜题',
+    note:'笔记', hintBtn:'提示', undo:'撤销', erase:'擦除',
+    noteMode:'笔记模式 — 数字将以小字写入',
+    pickCell:'请先选择一个空格', givenCell:'这是题目给定的格子', hintSeen:'此格已使用过提示',
+    hasNumber:'此格已有数字 — 请先擦除', hintValue:'提示：{n}',
+    newPuzzle:'新谜题',
+    records:'记录', total:'共 {n} 局', colDiff:'难度', colSolved:'完成次数', colBest:'最快', colWorst:'最慢',
+    reset:'清除全部记录', resetConfirm:'要清除所有已保存的记录吗？此操作无法撤销。',
+    help:'使用说明', close:'关闭', language:'语言',
+    helpDoc:[
+      {h:'游戏简介', p:'RYK SUDOKU 是一款具备难度选择、时间记录、笔记和提示功能的数独游戏。每道谜题都只有唯一解，打开一次后即可在没有网络的情况下游玩。'},
+      {h:'规则', p:'填满所有空格，使每一行、每一列和每个 3×3 宫格中的数字 1 到 9 各出现一次。完成谜题后，会有烟花为你庆祝。'},
+      {h:'操作方法', items:[
+        ['难度 · 新谜题','点击后立即开始新谜题，正在解答的谜题不会保留。'],
+        ['输入数字','选择格子后点击下方数字。违反规则的数字会显示为红色。'],
+        ['暂停','时间停止，棋盘被遮住。切换到其他应用时会自动暂停，阅读使用说明时时间也不会流逝。'],
+        ['✎ 笔记','开启后点击数字，可在格子中以小字写下候选数字。再次点击同一数字即可删除。'],
+        ['💡 提示','选择空格后点击，正确答案将以紫色填入并锁定。'],
+        ['↺ 撤销 · ⌫ 擦除','取消上一步输入，或清空所选格子。'],
+        ['绿色显示','当某行、某列或某宫格被 1 至 9 正确填满时，这些格子会变成绿色。'],
+        ['键盘快捷键','1–9 输入，Backspace 擦除，方向键移动，H 提示，N 笔记。'],
+      ]},
+      {h:'记录与保存', items:[
+        ['记录','显示各难度的完成次数以及最快、最慢时间。使用提示的谜题只计入完成次数。'],
+        ['继续游戏','关闭应用后，正在解答的谜题和时间会被保存，再次打开即可继续。'],
+        ['保存位置','记录只保存在当前设备上，不会转移到其他设备。'],
+        ['记录丢失的情况','删除应用、清除网站数据或使用无痕模式时记录会丢失。在 iPhone 上，如果数周以上未打开，数据可能被清理。'],
+        ['语言','可随时通过屏幕顶部的菜单更改，正在解答的谜题和记录都会保留。'],
+      ]},
+      {h:'安装方法', p:'也可以不安装，直接在浏览器中游玩。', items:[
+        ['iPhone · iPad','用 Safari 打开游戏地址，依次点击分享按钮 → 添加到主屏幕 → 添加。'],
+        ['Android','用 Chrome 打开游戏地址，依次点击 ⋮ 菜单 → 安装应用（或添加到主屏幕）→ 安装。'],
+        ['PC','用 Chrome 或 Edge 打开游戏地址，点击地址栏右侧的安装图标 → 安装。'],
+      ]},
+    ],
+  },
+  es:{
+    easy:'Fácil', medium:'Medio', hard:'Difícil', expert:'Experto',
+    pause:'Pausa', resumeShort:'Seguir', paused:'El tiempo está en pausa', resumeLong:'Seguir resolviendo',
+    win:'¡Completado!', winBest:'Nuevo mejor tiempo', winHint:'Pistas usadas: {n} — tiempo no registrado', again:'Otra partida',
+    loading:'Creando el sudoku',
+    note:'Notas', hintBtn:'Pista', undo:'Deshacer', erase:'Borrar',
+    noteMode:'Modo notas — los números se escriben en pequeño',
+    pickCell:'Primero selecciona una casilla vacía', givenCell:'Esta casilla viene dada desde el inicio', hintSeen:'Ya usaste una pista en esta casilla',
+    hasNumber:'La casilla tiene un número — bórralo primero', hintValue:'Pista: {n}',
+    newPuzzle:'Nuevo sudoku',
+    records:'Registros', total:'Total: {n}', colDiff:'Nivel', colSolved:'Resueltos', colBest:'Más rápido', colWorst:'Más lento',
+    reset:'Borrar todos los registros', resetConfirm:'¿Borrar todos los registros guardados? No se puede deshacer.',
+    help:'Instrucciones', close:'Cerrar', language:'Idioma',
+    helpDoc:[
+      {h:'Sobre el juego', p:'RYK SUDOKU es un sudoku con niveles de dificultad, registro de tiempos, notas y pistas. Cada sudoku tiene una única solución y, una vez abierto, el juego también funciona sin conexión a internet.'},
+      {h:'Reglas', p:'Rellena todas las casillas vacías para que cada fila, columna y caja de 3×3 contenga los números del 1 al 9 una sola vez. Al completar el sudoku, unos fuegos artificiales celebrarán tu victoria.'},
+      {h:'Controles', items:[
+        ['Nivel · Nuevo sudoku','Empieza un sudoku nuevo de inmediato. La partida en curso no se conserva.'],
+        ['Introducir números','Selecciona una casilla y toca un número abajo. Los números que incumplen las reglas se muestran en rojo.'],
+        ['Pausa','Detiene el tiempo y oculta el tablero. El juego también se pausa al cambiar a otra aplicación, y el tiempo no corre mientras lees estas instrucciones.'],
+        ['✎ Notas','Actívalas y toca números para escribir candidatos pequeños en una casilla. Toca el mismo número otra vez para quitarlo.'],
+        ['💡 Pista','Selecciona una casilla vacía y toca para rellenar el número correcto en morado. La casilla queda bloqueada.'],
+        ['↺ Deshacer · ⌫ Borrar','Cancela tu última entrada o vacía la casilla seleccionada.'],
+        ['Casillas verdes','Cuando una fila, columna o caja se completa correctamente del 1 al 9, sus casillas se vuelven verdes.'],
+        ['Atajos de teclado','1–9 para escribir, Retroceso para borrar, flechas para moverte, H para pista, N para notas.'],
+      ]},
+      {h:'Registros y guardado', items:[
+        ['Registros','Muestra los sudokus resueltos y los tiempos más rápido y más lento de cada nivel. Los resueltos con pistas solo suman al número de resueltos.'],
+        ['Continuar','Tu partida y tu tiempo se guardan al cerrar la aplicación, así que puedes seguir donde lo dejaste.'],
+        ['Dónde se guarda','Los registros quedan en el dispositivo que usas y no pasan a otros dispositivos.'],
+        ['Cuándo se pierden','Se borran al eliminar la aplicación, borrar los datos del sitio o usar la navegación privada. En iPhone, los datos pueden borrarse si no abres la aplicación durante varias semanas.'],
+        ['Idioma','Cámbialo cuando quieras desde el menú superior. Tu partida y tus registros se conservan.'],
+      ]},
+      {h:'Cómo instalar', p:'También puedes jugar directamente en el navegador sin instalar nada.', items:[
+        ['iPhone · iPad','Abre la dirección del juego en Safari y toca Compartir → Añadir a pantalla de inicio → Añadir.'],
+        ['Android','Abre la dirección del juego en Chrome y toca el menú ⋮ → Instalar aplicación (o Añadir a pantalla de inicio) → Instalar.'],
+        ['PC','Abre la dirección del juego en Chrome o Edge y haz clic en el icono de instalación a la derecha de la barra de direcciones → Instalar.'],
+      ]},
+    ],
+  },
+  fr:{
+    easy:'Facile', medium:'Moyen', hard:'Difficile', expert:'Expert',
+    pause:'Pause', resumeShort:'Reprendre', paused:'Le temps est en pause', resumeLong:'Continuer la grille',
+    win:'Terminé !', winBest:'Nouveau meilleur temps', winHint:'Indices utilisés : {n} — temps non enregistré', again:'Rejouer',
+    loading:'Création de la grille',
+    note:'Notes', hintBtn:'Indice', undo:'Annuler', erase:'Effacer',
+    noteMode:'Mode notes — les chiffres s’écrivent en petit',
+    pickCell:'Sélectionnez d’abord une case vide', givenCell:'Cette case est donnée dès le départ', hintSeen:'Indice déjà utilisé sur cette case',
+    hasNumber:'Cette case contient un chiffre — effacez-le d’abord', hintValue:'Indice : {n}',
+    newPuzzle:'Nouvelle grille',
+    records:'Records', total:'Total : {n}', colDiff:'Niveau', colSolved:'Résolues', colBest:'Plus rapide', colWorst:'Plus lent',
+    reset:'Effacer tous les records', resetConfirm:'Effacer tous les records enregistrés ? Cette action est irréversible.',
+    help:'Mode d’emploi', close:'Fermer', language:'Langue',
+    helpDoc:[
+      {h:'À propos du jeu', p:'RYK SUDOKU est un sudoku avec niveaux de difficulté, records de temps, notes et indices. Chaque grille n’a qu’une seule solution et, une fois ouvert, le jeu fonctionne aussi sans connexion internet.'},
+      {h:'Règles', p:'Remplissez toutes les cases vides pour que chaque ligne, colonne et bloc de 3×3 contienne une seule fois les chiffres de 1 à 9. Une fois la grille terminée, un feu d’artifice célèbre votre réussite.'},
+      {h:'Commandes', items:[
+        ['Niveau · Nouvelle grille','Lance immédiatement une nouvelle grille. La partie en cours n’est pas conservée.'],
+        ['Saisir un chiffre','Sélectionnez une case, puis touchez un chiffre en bas. Les chiffres contraires aux règles s’affichent en rouge.'],
+        ['Pause','Arrête le temps et masque la grille. Le jeu se met aussi en pause lorsque vous passez à une autre application, et le temps ne s’écoule pas pendant la lecture de ce mode d’emploi.'],
+        ['✎ Notes','Activez-les, puis touchez des chiffres pour noter de petits candidats dans une case. Touchez de nouveau le même chiffre pour le retirer.'],
+        ['💡 Indice','Sélectionnez une case vide et touchez pour afficher le bon chiffre en violet. La case est alors verrouillée.'],
+        ['↺ Annuler · ⌫ Effacer','Annule votre dernière saisie ou vide la case sélectionnée.'],
+        ['Cases vertes','Lorsqu’une ligne, une colonne ou un bloc est correctement rempli de 1 à 9, ses cases passent au vert.'],
+        ['Raccourcis clavier','1–9 pour saisir, Retour arrière pour effacer, flèches pour se déplacer, H pour un indice, N pour les notes.'],
+      ]},
+      {h:'Records et sauvegarde', items:[
+        ['Records','Affiche le nombre de grilles résolues et les temps le plus rapide et le plus lent de chaque niveau. Les grilles résolues avec des indices ne comptent que dans le nombre de grilles résolues.'],
+        ['Reprendre','Votre grille et votre temps sont enregistrés à la fermeture de l’application : vous pouvez reprendre là où vous en étiez.'],
+        ['Lieu d’enregistrement','Les records restent sur l’appareil utilisé et ne sont pas transférés vers d’autres appareils.'],
+        ['Perte des records','Ils disparaissent si vous supprimez l’application, effacez les données du site ou utilisez la navigation privée. Sur iPhone, les données peuvent être effacées si l’application n’est pas ouverte pendant plusieurs semaines.'],
+        ['Langue','Modifiable à tout moment depuis le menu en haut de l’écran. Votre grille et vos records sont conservés.'],
+      ]},
+      {h:'Installation', p:'Vous pouvez aussi jouer directement dans votre navigateur, sans rien installer.', items:[
+        ['iPhone · iPad','Ouvrez l’adresse du jeu dans Safari, puis touchez Partager → Sur l’écran d’accueil → Ajouter.'],
+        ['Android','Ouvrez l’adresse du jeu dans Chrome, puis touchez le menu ⋮ → Installer l’application (ou Ajouter à l’écran d’accueil) → Installer.'],
+        ['PC','Ouvrez l’adresse du jeu dans Chrome ou Edge, puis cliquez sur l’icône d’installation à droite de la barre d’adresse → Installer.'],
+      ]},
+    ],
+  },
+  de:{
+    easy:'Leicht', medium:'Mittel', hard:'Schwer', expert:'Experte',
+    pause:'Pause', resumeShort:'Weiter', paused:'Die Zeit ist angehalten', resumeLong:'Weiterspielen',
+    win:'Geschafft!', winBest:'Neue Bestzeit', winHint:'Hinweise genutzt: {n} — Zeit wird nicht gewertet', again:'Noch eine Runde',
+    loading:'Rätsel wird erstellt',
+    note:'Notizen', hintBtn:'Hinweis', undo:'Zurück', erase:'Löschen',
+    noteMode:'Notizmodus — Zahlen werden klein eingetragen',
+    pickCell:'Wähle zuerst ein leeres Feld aus', givenCell:'Dieses Feld ist von Anfang an vorgegeben', hintSeen:'Für dieses Feld wurde schon ein Hinweis genutzt',
+    hasNumber:'Das Feld enthält eine Zahl — bitte zuerst löschen', hintValue:'Hinweis: {n}',
+    newPuzzle:'Neues Rätsel',
+    records:'Rekorde', total:'Gesamt: {n}', colDiff:'Stufe', colSolved:'Gelöst', colBest:'Schnellste', colWorst:'Langsamste',
+    reset:'Alle Rekorde löschen', resetConfirm:'Alle gespeicherten Rekorde löschen? Das kann nicht rückgängig gemacht werden.',
+    help:'Anleitung', close:'Schließen', language:'Sprache',
+    helpDoc:[
+      {h:'Über das Spiel', p:'RYK SUDOKU ist ein Sudoku mit Schwierigkeitsstufen, Zeitrekorden, Notizen und Hinweisen. Jedes Rätsel hat genau eine Lösung, und einmal geöffnet funktioniert das Spiel auch ohne Internetverbindung.'},
+      {h:'Regeln', p:'Fülle alle leeren Felder so aus, dass jede Zeile, jede Spalte und jeder 3×3-Block die Zahlen 1 bis 9 genau einmal enthält. Ist das Rätsel gelöst, feiert ein Feuerwerk deinen Erfolg.'},
+      {h:'Bedienung', items:[
+        ['Stufe · Neues Rätsel','Startet sofort ein neues Rätsel. Das laufende Spiel wird nicht aufbewahrt.'],
+        ['Zahlen eingeben','Wähle ein Feld und tippe unten auf eine Zahl. Zahlen, die gegen die Regeln verstoßen, werden rot angezeigt.'],
+        ['Pause','Hält die Zeit an und verdeckt das Spielfeld. Das Spiel pausiert auch, wenn du zu einer anderen App wechselst, und während du diese Anleitung liest, läuft die Zeit nicht weiter.'],
+        ['✎ Notizen','Einschalten und Zahlen antippen, um kleine Kandidaten in ein Feld zu schreiben. Dieselbe Zahl erneut antippen, um sie zu entfernen.'],
+        ['💡 Hinweis','Wähle ein leeres Feld und tippe, um die richtige Zahl in Lila einzutragen. Das Feld wird dann gesperrt.'],
+        ['↺ Zurück · ⌫ Löschen','Macht die letzte Eingabe rückgängig oder leert das gewählte Feld.'],
+        ['Grüne Felder','Ist eine Zeile, Spalte oder ein Block korrekt mit 1 bis 9 gefüllt, werden die Felder grün.'],
+        ['Tastenkürzel','1–9 zum Eingeben, Rücktaste zum Löschen, Pfeiltasten zum Bewegen, H für Hinweis, N für Notizen.'],
+      ]},
+      {h:'Rekorde und Speichern', items:[
+        ['Rekorde','Zeigt die Anzahl gelöster Rätsel sowie die schnellste und langsamste Zeit je Stufe. Mit Hinweisen gelöste Rätsel zählen nur bei der Anzahl.'],
+        ['Fortsetzen','Rätsel und Zeit werden beim Schließen der App gespeichert, sodass du dort weitermachen kannst, wo du aufgehört hast.'],
+        ['Speicherort','Die Rekorde bleiben auf dem verwendeten Gerät und werden nicht auf andere Geräte übertragen.'],
+        ['Wann Rekorde verloren gehen','Beim Löschen der App oder der Websitedaten sowie beim privaten Surfen. Auf dem iPhone können Daten gelöscht werden, wenn die App mehrere Wochen nicht geöffnet wird.'],
+        ['Sprache','Jederzeit über das Menü oben änderbar. Dein Rätsel und deine Rekorde bleiben erhalten.'],
+      ]},
+      {h:'Installation', p:'Du kannst auch ohne Installation direkt im Browser spielen.', items:[
+        ['iPhone · iPad','Öffne die Adresse des Spiels in Safari und tippe auf Teilen → Zum Home-Bildschirm → Hinzufügen.'],
+        ['Android','Öffne die Adresse des Spiels in Chrome und tippe auf das Menü ⋮ → App installieren (oder Zum Startbildschirm hinzufügen) → Installieren.'],
+        ['PC','Öffne die Adresse des Spiels in Chrome oder Edge und klicke rechts in der Adressleiste auf das Installationssymbol → Installieren.'],
+      ]},
+    ],
+  },
+};
+const LANG_KEY = 'ryk-sudoku:lang';
+function detectLang(){
+  try{ const saved=localStorage.getItem(LANG_KEY); if(saved&&I18N[saved]) return saved; }catch(e){}
+  const prefs=(navigator.languages&&navigator.languages.length)?navigator.languages:[navigator.language||'en'];
+  for(const p of prefs){
+    const base=String(p).toLowerCase().split('-')[0];
+    if(I18N[base]) return base;
+  }
+  return 'en';
+}
+let lang = detectLang();
+function t(key,params){
+  let s = I18N[lang][key];
+  if(s===undefined) s = I18N.en[key];
+  if(params) Object.keys(params).forEach(k=>{ s=s.split('{'+k+'}').join(params[k]); });
+  return s;
+}
+
+/* ---------------- fireworks ---------------- */
+const FX = (()=>{
+  const cv=document.getElementById('fx');
+  const COLORS=['#FF4D5E','#FFB627','#FFE66D','#3DDC84','#38BDF8','#6C8CFF','#C77DFF','#FF7AC6'];
+  const R=Math.random, TAU=Math.PI*2, MAX_PARTS=1100;
+  let ctx=null, raf=0, parts=[], shells=[], w=0, h=0, last=0, elapsed=0, nextLaunch=0, launchUntil=0, still=false;
+  const pick=()=>COLORS[Math.floor(R()*COLORS.length)];
+  function size(){
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    w=window.innerWidth; h=window.innerHeight;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
+    ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function launch(){
+    shells.push({x:w*(.14+.72*R()), y:h+6, vx:(R()-.5)*50, vy:-Math.max(560,h*1.05),
+      top:h*(.1+.42*R()), c:pick()});
+  }
+  function burst(x,y,c1){
+    const c2=pick(), n=70+Math.floor(R()*34), power=Math.min(w,h)*(.5+.22*R());
+    for(let i=0;i<n&&parts.length<MAX_PARTS;i++){
+      const a=TAU*i/n+R()*.08, sp=power*(.32+.68*R());
+      parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,age:0,max:.85+R()*.55,
+        c:i%4===0?c2:c1,r:1.3+R()*1.5,g:210,drag:2.1});
+    }
+  }
+  function stillBurst(x,y,c1){
+    const n=26, rad=Math.min(w,h)*.13;
+    for(let i=0;i<n;i++){
+      const a=TAU*i/n, d=rad*(i%2?1:.62);
+      parts.push({x:x+Math.cos(a)*d,y:y+Math.sin(a)*d,vx:0,vy:0,age:0,max:1.6,c:c1,r:2.4,g:0,drag:0});
+    }
+  }
+  function frame(now){
+    const dt=Math.min(.05,(now-last)/1000||0); last=now; elapsed+=dt;
+    if(!still&&elapsed<launchUntil&&elapsed>=nextLaunch){ launch(); nextLaunch=elapsed+.16+R()*.2; }
+    ctx.globalCompositeOperation='source-over';
+    if(still) ctx.clearRect(0,0,w,h);
+    else{
+      ctx.globalCompositeOperation='destination-out';
+      ctx.fillStyle='rgba(0,0,0,.24)'; ctx.fillRect(0,0,w,h);
+    }
+    ctx.globalCompositeOperation=still?'source-over':'lighter';
+    shells=shells.filter(s=>{
+      s.x+=s.vx*dt; s.y+=s.vy*dt; s.vy+=240*dt;
+      ctx.globalAlpha=.95; ctx.fillStyle=s.c;
+      ctx.beginPath(); ctx.arc(s.x,s.y,2.2,0,TAU); ctx.fill();
+      if(s.y<=s.top||s.vy>=-70){ burst(s.x,s.y,s.c); return false; }
+      return true;
+    });
+    parts=parts.filter(p=>{
+      p.age+=dt; if(p.age>=p.max) return false;
+      const k=Math.max(0,1-p.drag*dt);
+      p.vx*=k; p.vy=p.vy*k+p.g*dt;
+      p.x+=p.vx*dt; p.y+=p.vy*dt;
+      const f=p.age/p.max;
+      ctx.globalAlpha=Math.max(0,1-f*f);
+      ctx.fillStyle=p.c;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,TAU); ctx.fill();
+      return true;
+    });
+    ctx.globalAlpha=1;
+    if(parts.length||shells.length||(!still&&elapsed<launchUntil)) raf=requestAnimationFrame(frame);
+    else stop();
+  }
+  function stop(){
+    if(raf) cancelAnimationFrame(raf);
+    raf=0; parts=[]; shells=[];
+    if(ctx) ctx.clearRect(0,0,w,h);
+    window.removeEventListener('resize',size);
+    cv.classList.add('hidden');
+  }
+  function start(){
+    stop();
+    cv.classList.remove('hidden');
+    size();
+    window.addEventListener('resize',size);
+    still=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    elapsed=0; last=performance.now();
+    if(still){
+      stillBurst(w*.28,h*.26,COLORS[0]);
+      stillBurst(w*.72,h*.2,COLORS[4]);
+      stillBurst(w*.5,h*.72,COLORS[1]);
+      launchUntil=0;
+    }else{
+      launchUntil=1.9; nextLaunch=.34;
+      launch(); launch(); launch();
+    }
+    raf=requestAnimationFrame(frame);
+  }
+  return {start,stop};
+})();
+
 /* ---------------- constants ---------------- */
 const DIFFS = [
-  {key:'easy',   label:'쉬움',   clues:45},
-  {key:'medium', label:'보통',   clues:36},
-  {key:'hard',   label:'어려움', clues:30},
-  {key:'expert', label:'전문가', clues:26},
+  {key:'easy',   clues:45},
+  {key:'medium', clues:36},
+  {key:'hard',   clues:30},
+  {key:'expert', clues:26},
 ];
 const STATS_KEY = 'ryk-sudoku:stats';
 const GAME_KEY  = 'ryk-sudoku:game';
@@ -247,7 +704,8 @@ function carve(sol,target){
 /* ---------------- state ---------------- */
 let S = {
   diff:'easy', puzzle:[], solution:[], board:[], notes:[], revealed:[],
-  sel:null, noteMode:false, history:[], elapsed:0, paused:false, solved:false, loading:true
+  sel:null, noteMode:false, history:[], elapsed:0, paused:false, solved:false, loading:true,
+  helpOpen:false, win:null
 };
 let stats = loadStats();
 let timerId = null;
@@ -313,12 +771,16 @@ function doneSet(){
   })));
   return done;
 }
-function say(msg){
-  document.getElementById('status').textContent=msg;
+let statusMsg=null;
+function paintStatus(){
+  document.getElementById('status').textContent =
+    statusMsg ? t(statusMsg.key,statusMsg.params) : (S.noteMode ? t('noteMode') : '');
+}
+function say(key,params){
+  statusMsg={key,params};
+  paintStatus();
   clearTimeout(say._t);
-  say._t=setTimeout(()=>{ 
-    document.getElementById('status').textContent = S.noteMode ? '메모 모드 — 숫자를 누르면 작게 적힙니다' : '';
-  },2400);
+  say._t=setTimeout(()=>{ statusMsg=null; paintStatus(); },2400);
 }
 
 /* ---------------- build DOM ---------------- */
@@ -337,7 +799,7 @@ for(let i=0;i<81;i++){
 const diffsEl=document.getElementById('diffs');
 DIFFS.forEach(d=>{
   const b=document.createElement('button');
-  b.className='diff'; b.textContent=d.label; b.dataset.key=d.key;
+  b.className='diff'; b.dataset.key=d.key;
   b.addEventListener('click',()=>newGame(d.key));
   diffsEl.appendChild(b);
 });
@@ -351,7 +813,8 @@ for(let n=1;n<=9;n++){
 
 /* ---------------- game actions ---------------- */
 function newGame(key){
-  S.diff=key; S.loading=true; render();
+  FX.stop();
+  S.diff=key; S.loading=true; S.solved=false; S.win=null; render();
   setTimeout(()=>{
     const sol=makeSolution();
     const puz=carve(sol,DIFFS.find(d=>d.key===key).clues);
@@ -359,7 +822,7 @@ function newGame(key){
     S.notes=Array.from({length:81},()=>[]); S.revealed=[]; S.history=[];
     S.sel=null; S.elapsed=0; S.paused=false; S.solved=false; S.noteMode=false;
     S.loading=false;
-    document.getElementById('status').textContent='';
+    statusMsg=null;
     saveGame(); render();
   },30);
 }
@@ -380,12 +843,12 @@ function place(v){
 function hint(){
   if(S.loading||S.solved||S.paused) return;
   const i=S.sel;
-  if(i===null){ say('빈칸을 먼저 선택하세요'); return; }
-  if(S.puzzle[i]!==0){ say('처음부터 주어진 칸입니다'); return; }
-  if(S.revealed.includes(i)){ say('이미 힌트를 본 칸입니다'); return; }
-  if(S.board[i]!==0){ say('숫자가 있는 칸입니다 — 지우고 눌러주세요'); return; }
+  if(i===null){ say('pickCell'); return; }
+  if(S.puzzle[i]!==0){ say('givenCell'); return; }
+  if(S.revealed.includes(i)){ say('hintSeen'); return; }
+  if(S.board[i]!==0){ say('hasNumber'); return; }
   S.revealed.push(i); S.notes[i]=[]; S.board[i]=S.solution[i];
-  say('힌트: '+S.board[i]);
+  say('hintValue',{n:S.board[i]});
   checkWin(); saveGame(); render();
 }
 function undo(){
@@ -411,20 +874,22 @@ function checkWin(){
   };
   saveStats();
   try{ localStorage.removeItem(GAME_KEY); }catch(e){}
-  document.getElementById('winNote').textContent =
-    !clean ? `힌트 ${S.revealed.length}회 사용 — 시간 기록 제외`
-           : (isBest&&cur.solved>0 ? '새 최단 기록' : '완성');
+  S.win = !clean ? {key:'winHint',params:{n:S.revealed.length}}
+                 : {key:(isBest&&cur.solved>0)?'winBest':'win'};
   document.getElementById('winTime').textContent=fmt(S.elapsed);
+  FX.start();
 }
 
 /* ---------------- render ---------------- */
 function render(){
   document.querySelectorAll('.diff').forEach(b=>b.classList.toggle('on',b.dataset.key===S.diff));
-  document.getElementById('diffLabel').textContent=DIFFS.find(d=>d.key===S.diff).label;
+  document.getElementById('diffLabel').textContent=t(S.diff);
   document.getElementById('clock').textContent=fmt(S.elapsed);
-  document.getElementById('pause').textContent=S.paused?'계속하기':'멈춤';
+  document.getElementById('pause').textContent=t(S.paused?'resumeShort':'pause');
   document.getElementById('noteBtn').classList.toggle('on',S.noteMode);
-  document.getElementById('hintBtn').textContent=S.revealed.length?`💡 힌트 ${S.revealed.length}`:'💡 힌트';
+  document.querySelector('#hintBtn .tx').textContent=t('hintBtn')+(S.revealed.length?' '+S.revealed.length:'');
+  document.getElementById('winNote').textContent=S.win?t(S.win.key,S.win.params):'';
+  paintStatus();
 
   document.getElementById('loadCover').classList.toggle('hidden',!S.loading);
   document.getElementById('pauseCover').classList.toggle('hidden',!(S.paused&&!S.solved&&!S.loading));
@@ -469,16 +934,85 @@ function renderRecords(){
     total+=s.solved;
     const div=document.createElement('div');
     div.className='recRow'+(d.key===S.diff?' cur':'');
-    div.innerHTML=`<span>${d.label}</span><span>${s.solved}</span>`+
+    div.innerHTML=`<span>${t(d.key)}</span><span>${s.solved}</span>`+
       `<span>${s.best===null?'–':fmt(s.best)}</span><span>${s.worst===null?'–':fmt(s.worst)}</span>`;
     rows.appendChild(div);
   });
-  document.getElementById('totalSolved').textContent=total;
+  const totalEl=document.getElementById('recTotal');
+  totalEl.textContent='';
+  t('total').split('{n}').forEach((part,idx)=>{
+    if(idx>0){ const b=document.createElement('b'); b.textContent=total; totalEl.appendChild(b); }
+    totalEl.appendChild(document.createTextNode(part));
+  });
 }
+
+/* ---------------- language + help ---------------- */
+const langSel=document.getElementById('langSel');
+LANGS.forEach(l=>{
+  const o=document.createElement('option');
+  o.value=l.code; o.textContent=l.name; langSel.appendChild(o);
+});
+function renderHelp(){
+  const body=document.getElementById('helpBody');
+  body.textContent='';
+  t('helpDoc').forEach(sec=>{
+    const h=document.createElement('h3'); h.textContent=sec.h; body.appendChild(h);
+    if(sec.p){ const p=document.createElement('p'); p.textContent=sec.p; body.appendChild(p); }
+    if(sec.items){
+      const dl=document.createElement('dl');
+      sec.items.forEach(([lead,text])=>{
+        const dt=document.createElement('dt'); dt.textContent=lead;
+        const dd=document.createElement('dd'); dd.textContent=text;
+        dl.append(dt,dd);
+      });
+      body.appendChild(dl);
+    }
+  });
+}
+function applyLang(){
+  const meta=LANGS.find(l=>l.code===lang);
+  document.documentElement.lang=meta.html;
+  langSel.value=lang;
+  langSel.setAttribute('aria-label',t('language'));
+  const set=(id,key)=>{ document.getElementById(id).textContent=t(key); };
+  set('helpBtn','help'); set('helpTitle','help'); set('helpClose','close');
+  set('pausedText','paused'); set('resume','resumeLong'); set('again','again');
+  set('loadCover','loading'); set('newGame','newPuzzle'); set('recTitle','records');
+  set('colDiff','colDiff'); set('colSolved','colSolved'); set('colBest','colBest'); set('colWorst','colWorst');
+  set('reset','reset');
+  document.querySelector('#noteBtn .tx').textContent=t('note');
+  document.querySelector('#undoBtn .tx').textContent=t('undo');
+  document.querySelector('#eraseBtn .tx').textContent=t('erase');
+  document.querySelectorAll('.diff').forEach(b=>{ b.textContent=t(b.dataset.key); });
+  renderHelp();
+  render();
+}
+langSel.addEventListener('change',()=>{
+  lang=langSel.value;
+  try{ localStorage.setItem(LANG_KEY,lang); }catch(e){}
+  applyLang();
+});
+const helpModal=document.getElementById('helpModal');
+function openHelp(){
+  S.helpOpen=true;
+  helpModal.classList.remove('hidden');
+  document.body.classList.add('noscroll');
+  document.getElementById('helpBody').scrollTop=0;
+  document.getElementById('helpClose').focus();
+}
+function closeHelp(){
+  S.helpOpen=false;
+  helpModal.classList.add('hidden');
+  document.body.classList.remove('noscroll');
+  document.getElementById('helpBtn').focus();
+}
+document.getElementById('helpBtn').addEventListener('click',openHelp);
+document.getElementById('helpClose').addEventListener('click',closeHelp);
+helpModal.addEventListener('click',e=>{ if(e.target===helpModal) closeHelp(); });
 
 /* ---------------- timer ---------------- */
 function tick(){
-  if(S.loading||S.paused||S.solved) return;
+  if(S.loading||S.paused||S.solved||S.helpOpen) return;
   S.elapsed++;
   document.getElementById('clock').textContent=fmt(S.elapsed);
   if(S.elapsed%5===0) saveGame();
@@ -497,15 +1031,21 @@ document.getElementById('undoBtn').addEventListener('click',undo);
 document.getElementById('eraseBtn').addEventListener('click',()=>place(0));
 document.getElementById('noteBtn').addEventListener('click',()=>{
   S.noteMode=!S.noteMode;
-  document.getElementById('status').textContent=S.noteMode?'메모 모드 — 숫자를 누르면 작게 적힙니다':'';
+  statusMsg=null;
   render();
 });
 document.getElementById('reset').addEventListener('click',()=>{
-  if(confirm('저장된 기록을 모두 지울까요? 되돌릴 수 없습니다.')){
+  if(confirm(t('resetConfirm'))){
     stats=emptyStats(); saveStats(); render();
   }
 });
 document.addEventListener('keydown',e=>{
+  if(S.helpOpen){
+    if(e.key==='Escape') closeHelp();
+    else if(e.key==='Tab') e.preventDefault();
+    return;
+  }
+  if(e.target===langSel||e.ctrlKey||e.metaKey||e.altKey) return;
   if(e.key>='1'&&e.key<='9') place(Number(e.key));
   else if(e.key==='Backspace'||e.key==='Delete'||e.key==='0') place(0);
   else if(e.key==='h'||e.key==='H') hint();
@@ -515,10 +1055,16 @@ document.addEventListener('keydown',e=>{
     const t=S.sel+d; if(t>=0&&t<81){ S.sel=t; render(); }
   }
 });
-document.addEventListener('visibilitychange',()=>{ if(document.hidden) saveGame(); });
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden) return;
+  if(!S.loading&&!S.solved&&!S.paused){ S.paused=true; render(); }
+  saveGame();
+});
 
 /* ---------------- start ---------------- */
-if(restoreGame()) render(); else newGame('easy');
+const restored=restoreGame();
+applyLang();
+if(!restored) newGame('easy');
 
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));

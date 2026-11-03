@@ -1,4 +1,4 @@
-const CACHE = 'ryk-sudoku-v3';
+const CACHE = 'ryk-sudoku-v4';
 const ASSETS = [
   './',
   './index.html',
