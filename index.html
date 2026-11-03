@@ -101,7 +101,10 @@
   #loadCover{background:var(--paper);color:var(--given);font-size:14px}
   .cta{padding:9px 20px;border:none;border-radius:4px;background:var(--amber);
     color:var(--given);font-size:14px;font-weight:600}
-  #winNote{color:var(--amber);font-size:13px;letter-spacing:.06em}
+  .winCard{position:relative;z-index:16;display:flex;flex-direction:column;align-items:center;gap:8px;
+    width:min(100%,300px);padding:18px 16px;background:var(--ink);border:1px solid var(--amber);border-radius:6px}
+  #winNote{color:var(--amber);font-size:17px;font-weight:700;line-height:1.35}
+  #winSub{color:var(--paper);font-size:13.5px;line-height:1.45}
   #winTime{font-family:var(--serif);font-size:34px;font-variant-numeric:tabular-nums}
   .hidden{display:none!important}
 
@@ -193,9 +196,12 @@
       <button class="cta" id="resume"></button>
     </div>
     <div class="overlay hidden" id="winCover">
-      <span id="winNote"></span>
-      <span id="winTime">00:00</span>
-      <button class="cta" id="again"></button>
+      <div class="winCard">
+        <span id="winNote"></span>
+        <span id="winSub" class="hidden"></span>
+        <span id="winTime">00:00</span>
+        <button class="cta" id="again"></button>
+      </div>
     </div>
     <div class="overlay hidden" id="loadCover"></div>
   </div>
@@ -249,7 +255,7 @@ const I18N = {
   ko:{
     easy:'쉬움', medium:'보통', hard:'어려움', expert:'전문가',
     pause:'멈춤', resumeShort:'계속하기', paused:'시간이 멈췄습니다', resumeLong:'이어서 풀기',
-    win:'완성', winBest:'새 최단 기록', winHint:'힌트 {n}회 사용 — 시간 기록 제외', again:'한 판 더',
+    win:'완성', winBest:'새 최단 기록', winHint:'힌트 {n}회 사용', winHintSub:'이번 판의 시간은 기록되지 않습니다', again:'한 판 더',
     loading:'퍼즐 만드는 중',
     note:'메모', hintBtn:'힌트', undo:'되돌리기', erase:'지우기',
     noteMode:'메모 모드 — 숫자를 누르면 작게 적힙니다',
@@ -289,7 +295,7 @@ const I18N = {
   en:{
     easy:'Easy', medium:'Medium', hard:'Hard', expert:'Expert',
     pause:'Pause', resumeShort:'Resume', paused:'Time is paused', resumeLong:'Keep solving',
-    win:'Solved', winBest:'New fastest time', winHint:'{n} hint(s) used — time not recorded', again:'Play again',
+    win:'Solved', winBest:'New fastest time', winHint:'Hints used: {n}', winHintSub:'This game’s time is not recorded', again:'Play again',
     loading:'Creating puzzle',
     note:'Notes', hintBtn:'Hint', undo:'Undo', erase:'Erase',
     noteMode:'Notes mode — numbers are written small',
@@ -329,7 +335,7 @@ const I18N = {
   ja:{
     easy:'かんたん', medium:'ふつう', hard:'むずかしい', expert:'上級',
     pause:'一時停止', resumeShort:'再開', paused:'時間を止めています', resumeLong:'続きを解く',
-    win:'完成', winBest:'最短記録を更新', winHint:'ヒント{n}回使用 — タイムは記録されません', again:'もう一度',
+    win:'完成', winBest:'最短記録を更新', winHint:'ヒント{n}回使用', winHintSub:'今回のタイムは記録されません', again:'もう一度',
     loading:'パズルを作成中',
     note:'メモ', hintBtn:'ヒント', undo:'元に戻す', erase:'消す',
     noteMode:'メモモード — 数字が小さく書き込まれます',
@@ -369,7 +375,7 @@ const I18N = {
   zh:{
     easy:'简单', medium:'中等', hard:'困难', expert:'专家',
     pause:'暂停', resumeShort:'继续', paused:'时间已暂停', resumeLong:'继续解题',
-    win:'完成', winBest:'新的最快纪录', winHint:'使用了 {n} 次提示 — 不记录时间', again:'再来一局',
+    win:'完成', winBest:'新的最快纪录', winHint:'使用了 {n} 次提示', winHintSub:'本局时间不计入记录', again:'再来一局',
     loading:'正在生成谜题',
     note:'笔记', hintBtn:'提示', undo:'撤销', erase:'擦除',
     noteMode:'笔记模式 — 数字将以小字写入',
@@ -409,7 +415,7 @@ const I18N = {
   es:{
     easy:'Fácil', medium:'Medio', hard:'Difícil', expert:'Experto',
     pause:'Pausa', resumeShort:'Seguir', paused:'El tiempo está en pausa', resumeLong:'Seguir resolviendo',
-    win:'¡Completado!', winBest:'Nuevo mejor tiempo', winHint:'Pistas usadas: {n} — tiempo no registrado', again:'Otra partida',
+    win:'¡Completado!', winBest:'Nuevo mejor tiempo', winHint:'Pistas usadas: {n}', winHintSub:'El tiempo de esta partida no se registra', again:'Otra partida',
     loading:'Creando el sudoku',
     note:'Notas', hintBtn:'Pista', undo:'Deshacer', erase:'Borrar',
     noteMode:'Modo notas — los números se escriben en pequeño',
@@ -449,7 +455,7 @@ const I18N = {
   fr:{
     easy:'Facile', medium:'Moyen', hard:'Difficile', expert:'Expert',
     pause:'Pause', resumeShort:'Reprendre', paused:'Le temps est en pause', resumeLong:'Continuer la grille',
-    win:'Terminé !', winBest:'Nouveau meilleur temps', winHint:'Indices utilisés : {n} — temps non enregistré', again:'Rejouer',
+    win:'Terminé !', winBest:'Nouveau meilleur temps', winHint:'Indices utilisés : {n}', winHintSub:'Le temps de cette partie n’est pas enregistré', again:'Rejouer',
     loading:'Création de la grille',
     note:'Notes', hintBtn:'Indice', undo:'Annuler', erase:'Effacer',
     noteMode:'Mode notes — les chiffres s’écrivent en petit',
@@ -489,7 +495,7 @@ const I18N = {
   de:{
     easy:'Leicht', medium:'Mittel', hard:'Schwer', expert:'Experte',
     pause:'Pause', resumeShort:'Weiter', paused:'Die Zeit ist angehalten', resumeLong:'Weiterspielen',
-    win:'Geschafft!', winBest:'Neue Bestzeit', winHint:'Hinweise genutzt: {n} — Zeit wird nicht gewertet', again:'Noch eine Runde',
+    win:'Geschafft!', winBest:'Neue Bestzeit', winHint:'Hinweise genutzt: {n}', winHintSub:'Die Zeit dieser Runde wird nicht gewertet', again:'Noch eine Runde',
     loading:'Rätsel wird erstellt',
     note:'Notizen', hintBtn:'Hinweis', undo:'Zurück', erase:'Löschen',
     noteMode:'Notizmodus — Zahlen werden klein eingetragen',
@@ -874,7 +880,7 @@ function checkWin(){
   };
   saveStats();
   try{ localStorage.removeItem(GAME_KEY); }catch(e){}
-  S.win = !clean ? {key:'winHint',params:{n:S.revealed.length}}
+  S.win = !clean ? {key:'winHint',params:{n:S.revealed.length},sub:'winHintSub'}
                  : {key:(isBest&&cur.solved>0)?'winBest':'win'};
   document.getElementById('winTime').textContent=fmt(S.elapsed);
   FX.start();
@@ -889,6 +895,9 @@ function render(){
   document.getElementById('noteBtn').classList.toggle('on',S.noteMode);
   document.querySelector('#hintBtn .tx').textContent=t('hintBtn')+(S.revealed.length?' '+S.revealed.length:'');
   document.getElementById('winNote').textContent=S.win?t(S.win.key,S.win.params):'';
+  const winSub=document.getElementById('winSub');
+  winSub.textContent=(S.win&&S.win.sub)?t(S.win.sub):'';
+  winSub.classList.toggle('hidden',!(S.win&&S.win.sub));
   paintStatus();
 
   document.getElementById('loadCover').classList.toggle('hidden',!S.loading);
